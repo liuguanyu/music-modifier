@@ -1,0 +1,74 @@
+.App {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #ffffff;
+}
+
+.app-header {
+  padding: 2rem;
+  text-align: center;
+  border-bottom: 1px solid #333;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app-header p {
+  margin: 0.5rem 0 0 0;
+  color: #b0b3b8;
+  font-size: 1.1rem;
+}
+
+.app-main {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.audio-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.audio-info {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.audio-info h3 {
+  margin: 0 0 1rem 0;
+  color: #4facfe;
+  font-size: 1.2rem;
+}
+
+.audio-info p {
+  margin: 0.5rem 0;
+  color: #e4e6ea;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 1rem;
+  }
+  
+  .app-header h1 {
+    font-size: 2rem;
+  }
+  
+  .app-main {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,175 @@
+.waveform-player {
+  margin: 16px 0;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.waveform-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.waveform-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.waveform-container {
+  margin: 16px 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fafafa;
+  min-height: 128px;
+}
+
+.waveform-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.playback-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.playback-controls button {
+  min-width: 80px;
+}
+
+.progress-control {
+  flex: 1;
+  min-width: 200px;
+}
+
+.time-display {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.progress-slider {
+  width: 100%;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.volume-slider {
+  width: 80px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .waveform-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .playback-controls {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .progress-control {
+    width: 100%;
+  }
+  
+  .volume-control {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .volume-slider {
+    width: 150px;
+  }
+}
+
+/* 波形特定样式 */
+.waveform-container wave {
+  border-radius: 4px;
+}
+
+/* 加载状态 */
+.waveform-container.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-style: italic;
+}
+
+/* 禁用状态样式 */
+.waveform-controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.waveform-controls .MuiSlider-root.Mui-disabled {
+  opacity: 0.5;
+}
+
+/* 音轨分离结果样式 */
+.track-waveforms {
+  display: grid;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.track-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.track-header {
+  background: #f5f5f5;
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.track-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.track-type {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.track-type.vocals {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.track-type.instrumental {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.track-type.original {
+  background: #e8f5e8;
+  color: #388e3c;
+}

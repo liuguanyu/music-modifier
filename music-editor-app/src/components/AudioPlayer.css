@@ -1,0 +1,281 @@
+.audio-player {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(79, 172, 254, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  backdrop-filter: blur(10px);
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.audio-info-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.file-name {
+  color: #b0b3b8;
+  font-size: 0.875rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.duration {
+  color: #4facfe;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.waveform-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.waveform-canvas {
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  background: #1a1a2e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.waveform-canvas:hover {
+  background: #1e1e3a;
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.1);
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  color: #b0b3b8;
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.play-pause-btn {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+}
+
+.play-pause-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(79, 172, 254, 0.4);
+}
+
+.play-pause-btn:active {
+  transform: scale(0.95);
+}
+
+.play-pause-btn.playing {
+  background: linear-gradient(45deg, #ff6b6b 0%, #ff8e8e 100%);
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+}
+
+.play-pause-btn.playing:hover {
+  box-shadow: 0 6px 24px rgba(255, 107, 107, 0.4);
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #b0b3b8;
+}
+
+.volume-slider {
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  background: #4facfe;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: all 0.2s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  background: #00f2fe;
+  transform: scale(1.2);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #4facfe;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  background: #00f2fe;
+  transform: scale(1.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .audio-player {
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .player-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .audio-info-compact {
+    align-items: flex-start;
+  }
+  
+  .waveform-canvas {
+    height: 80px;
+  }
+  
+  .player-controls {
+    gap: 1rem;
+  }
+  
+  .play-pause-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .volume-slider {
+    width: 60px;
+  }
+  
+  .file-name {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .audio-player {
+    padding: 0.75rem;
+  }
+  
+  .player-header h3 {
+    font-size: 1rem;
+  }
+  
+  .waveform-canvas {
+    height: 60px;
+  }
+  
+  .time-display {
+    font-size: 0.625rem;
+  }
+  
+  .volume-control {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .volume-slider {
+    width: 40px;
+  }
+}
+
+/* 加载和错误状态 */
+.audio-player.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.audio-player.error {
+  border-color: rgba(255, 59, 48, 0.3);
+  background: rgba(255, 59, 48, 0.05);
+}
+
+/* 动画效果 */
+.audio-player {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 波形可视化增强 */
+.waveform-canvas {
+  position: relative;
+}
+
+.waveform-canvas::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(79, 172, 254, 0.05) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.waveform-canvas:hover::before {
+  opacity: 1;
+}

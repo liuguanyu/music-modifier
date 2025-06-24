@@ -1,0 +1,193 @@
+.audio-importer {
+  border: 2px dashed #4facfe;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.audio-importer:hover {
+  border-color: #00f2fe;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(79, 172, 254, 0.2);
+}
+
+.audio-importer.drag-active {
+  border-color: #00f2fe;
+  background: rgba(0, 242, 254, 0.1);
+  transform: scale(1.02);
+}
+
+.audio-importer.loading {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.import-content {
+  position: relative;
+  z-index: 1;
+}
+
+.import-icon {
+  margin: 0 auto 1.5rem;
+  width: 64px;
+  height: 64px;
+  color: #4facfe;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.audio-importer:hover .import-icon {
+  color: #00f2fe;
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.import-content h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.import-content p {
+  margin: 0.5rem 0;
+  color: #b0b3b8;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.supported-formats {
+  font-size: 0.875rem !important;
+  color: #65676b !important;
+  margin-top: 1rem !important;
+}
+
+.select-file-btn {
+  background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+}
+
+.select-file-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(79, 172, 254, 0.4);
+}
+
+.select-file-btn:active {
+  transform: translateY(0);
+}
+
+/* 加载状态样式 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(79, 172, 254, 0.2);
+  border-left-color: #4facfe;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p {
+  color: #4facfe;
+  font-weight: 500;
+}
+
+/* 错误信息样式 */
+.error-message {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  color: #ff6b6b;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.error-message strong {
+  color: #ff3b30;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .audio-importer {
+    padding: 2rem 1rem;
+    margin: 0 0.5rem;
+  }
+  
+  .import-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .import-content h3 {
+    font-size: 1.25rem;
+  }
+  
+  .import-content p {
+    font-size: 0.875rem;
+  }
+  
+  .select-file-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* 动画效果 */
+.audio-importer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    rgba(79, 172, 254, 0.1),
+    transparent,
+    rgba(0, 242, 254, 0.1),
+    transparent
+  );
+  animation: rotate 8s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.audio-importer:hover::before {
+  opacity: 1;
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

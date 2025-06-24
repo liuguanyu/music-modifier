@@ -1,0 +1,398 @@
+.lyrics-extractor {
+  background: #1e1e2e;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #333;
+}
+
+.extractor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.extractor-header h3 {
+  color: #e0e0e0;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.extraction-settings {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.setting-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting-group label {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.setting-group select {
+  background: #2a2a3a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.setting-group select:hover {
+  border-color: #00d4ff;
+}
+
+.setting-group select:focus {
+  outline: none;
+  border-color: #00d4ff;
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+}
+
+.setting-group select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.extraction-controls {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.extract-btn {
+  background: linear-gradient(135deg, #9c27b0, #673ab7);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 15px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.extract-btn:hover {
+  background: linear-gradient(135deg, #8e24aa, #5e35b1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+}
+
+.extract-btn:active {
+  transform: translateY(0);
+}
+
+.extract-description {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.extraction-status {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9c27b0, #673ab7);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-text {
+  color: #9c27b0;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+
+.current-step {
+  color: #e0e0e0;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.extraction-results {
+  padding: 20px 0;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.result-header h4 {
+  color: #e0e0e0;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.result-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.confidence {
+  color: #9c27b0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.download-lrc-btn {
+  background: #9c27b0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.download-lrc-btn:hover {
+  background: #8e24aa;
+  transform: translateY(-1px);
+}
+
+.download-lrc-btn:active {
+  transform: translateY(0);
+}
+
+.lyrics-editor {
+  background: #2a2a3a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 25px;
+}
+
+.lyric-line {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lyric-line:last-child {
+  border-bottom: none;
+}
+
+.time-info {
+  color: #9c27b0;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.lyric-text-input {
+  flex: 1;
+  background: #333;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.lyric-text-input:hover {
+  border-color: #9c27b0;
+}
+
+.lyric-text-input:focus {
+  outline: none;
+  border-color: #9c27b0;
+  box-shadow: 0 0 0 2px rgba(156, 39, 176, 0.2);
+  background: #3a3a4a;
+}
+
+.lyric-text-input::placeholder {
+  color: #666;
+}
+
+.extraction-actions {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+}
+
+.reset-btn {
+  background: #444;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-btn:hover {
+  background: #555;
+  border-color: #666;
+}
+
+.reset-btn:active {
+  background: #333;
+}
+
+/* 滚动条样式 */
+.lyrics-editor::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lyrics-editor::-webkit-scrollbar-track {
+  background: #1e1e2e;
+  border-radius: 3px;
+}
+
+.lyrics-editor::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.lyrics-editor::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .lyrics-extractor {
+    padding: 15px;
+    margin: 15px 0;
+  }
+  
+  .extractor-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .extraction-settings {
+    justify-content: space-between;
+  }
+  
+  .result-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .result-info {
+    justify-content: space-between;
+  }
+  
+  .progress-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .progress-text {
+    text-align: center;
+  }
+  
+  .lyric-line {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    padding: 10px 0;
+  }
+  
+  .time-info {
+    text-align: center;
+    min-width: auto;
+  }
+  
+  .extraction-controls {
+    padding: 30px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .extract-btn {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+  
+  .download-lrc-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .setting-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  
+  .extraction-settings {
+    gap: 15px;
+  }
+}

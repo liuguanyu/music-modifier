@@ -1,0 +1,68 @@
+{
+  "name": "music-editor-app",
+  "version": "1.0.0",
+  "description": "AI驱动的音乐编辑器",
+  "main": "public/electron.js",
+  "scripts": {
+    "start": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "electron": "NODE_ENV=development electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3001 && NODE_ENV=development electron .\"",
+    "app": "npm run electron-dev",
+    "dist": "npm run build && electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["音乐", "编辑器", "AI", "音轨分离", "歌词识别"],
+  "author": "Music Editor Team",
+  "license": "MIT",
+  "homepage": "./",
+  "dependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3",
+    "wavesurfer.js": "^7.7.0",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.27.4",
+    "@babel/preset-react": "^7.27.1",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.3",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2",
+    "electron": "^36.5.0",
+    "electron-builder": "^24.9.1",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.musiceditor.app",
+    "productName": "Music Editor",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.music"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

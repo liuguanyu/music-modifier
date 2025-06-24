@@ -1,0 +1,132 @@
+.lyrics-editor {
+  margin: 16px 0;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+}
+
+.lyrics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.lyrics-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lyrics-content {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+.lyrics-list {
+  padding: 0;
+}
+
+.lyric-item {
+  transition: background-color 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.lyric-item.current {
+  background-color: #e3f2fd;
+  border-left-color: #1976d2;
+}
+
+.lyric-item:hover {
+  background-color: #f5f5f5;
+}
+
+.lyric-text-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lyric-text {
+  flex: 1;
+  min-width: 150px;
+  word-break: break-word;
+}
+
+.lyric-time {
+  flex-shrink: 0;
+  font-family: 'Courier New', monospace;
+}
+
+.lyric-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.time-inputs {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.time-input {
+  flex: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .lyrics-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .lyrics-actions {
+    justify-content: center;
+  }
+  
+  .lyric-text-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .lyric-actions {
+    justify-content: center;
+    margin-left: 0;
+  }
+  
+  .time-inputs {
+    flex-direction: column;
+  }
+}
+
+/* 滚动条样式 */
+.lyrics-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.lyrics-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.lyrics-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.lyrics-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

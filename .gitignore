@@ -189,3 +189,9 @@ dmypy.json
 music-editor-app/build/
 music-editor-app/release/
 music-editor-app/app/
+
+# prompts
+
+plan.md 
+prompt-tech.md
+prompt.md

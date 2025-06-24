@@ -28,11 +28,25 @@ class AudioMetadata:
     original_duration: float
     original_f0_mean: Optional[float] = None
     original_f0_std: Optional[float] = None
+    original_f0_sequence: Optional[np.ndarray] = None  # 完整音调轨道
     original_tempo: Optional[float] = None
     original_spectral_centroid: Optional[float] = None
     original_spectral_rolloff: Optional[float] = None
     original_mfcc_mean: Optional[np.ndarray] = None
+    original_mfcc_sequence: Optional[np.ndarray] = None  # MFCC时间序列
     original_rms_mean: Optional[float] = None
+    original_rms_sequence: Optional[np.ndarray] = None  # RMS包络序列
+    # 新增：相位和频谱信息
+    original_phase_spectrum: Optional[np.ndarray] = None  # 相位谱
+    original_magnitude_spectrum: Optional[np.ndarray] = None  # 幅度谱
+    # 新增：共振峰特征
+    original_formant_frequencies: Optional[List[np.ndarray]] = None  # 共振峰轨道
+    # 新增：说话人特征
+    speaker_embedding: Optional[np.ndarray] = None  # 说话人嵌入向量
+    # 新增：立体声和空间信息
+    stereo_features: Optional[Dict[str, Any]] = None
+    # 新增：高分辨率采样信息
+    original_nyquist_info: Optional[Dict[str, Any]] = None  # 高频信息
     transform_parameters: Dict[str, Any] = None
     
     def to_dict(self) -> Dict[str, Any]:
@@ -134,7 +148,7 @@ class SpeechRecognizer:
                 transform_parameters={}
             )
             
-            # 提取音高特征
+            # 提取音高特征（完整轨道）
             try:
                 f0, voiced_flag, voiced_probs = librosa.pyin(
                     y, fmin=50, fmax=2000, sr=sr
@@ -143,6 +157,8 @@ class SpeechRecognizer:
                 if len(valid_f0) > 0:
                     metadata.original_f0_mean = float(np.mean(valid_f0))
                     metadata.original_f0_std = float(np.std(valid_f0))
+                    # 保存完整音调轨道
+                    metadata.original_f0_sequence = f0.copy()
             except Exception as e:
                 logger.warning(f"音高提取失败: {e}")
             
@@ -153,7 +169,7 @@ class SpeechRecognizer:
             except Exception as e:
                 logger.warning(f"节拍提取失败: {e}")
             
-            # 提取频谱特征
+            # 提取频谱特征和完整时间序列
             try:
                 spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
                 metadata.original_spectral_centroid = float(np.mean(spectral_centroids))
@@ -161,11 +177,54 @@ class SpeechRecognizer:
                 spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
                 metadata.original_spectral_rolloff = float(np.mean(spectral_rolloff))
                 
+                # MFCC特征（均值和完整序列）
                 mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
                 metadata.original_mfcc_mean = np.mean(mfccs, axis=1)
+                metadata.original_mfcc_sequence = mfccs
                 
+                # RMS能量包络（均值和完整序列）
                 rms = librosa.feature.rms(y=y)[0]
                 metadata.original_rms_mean = float(np.mean(rms))
+                metadata.original_rms_sequence = rms
+                
+                # 相位和幅度谱（使用STFT）
+                stft = librosa.stft(y)
+                metadata.original_magnitude_spectrum = np.abs(stft)
+                metadata.original_phase_spectrum = np.angle(stft)
+                
+                # 说话人嵌入向量（简化版本，使用MFCC统计特征）
+                mfcc_stats = np.concatenate([
+                    np.mean(mfccs, axis=1),
+                    np.std(mfccs, axis=1),
+                    spectral_centroids[:10] if len(spectral_centroids) >= 10 else spectral_centroids
+                ])
+                metadata.speaker_embedding = mfcc_stats
+                
+                # 立体声特征提取（如果是立体声音频）
+                y_stereo = librosa.load(audio_path, sr=sr, mono=False)[0]
+                if y_stereo.ndim > 1:
+                    left_ch = y_stereo[0]
+                    right_ch = y_stereo[1]
+                    metadata.stereo_features = {
+                        "left_rms": float(np.sqrt(np.mean(left_ch**2))),
+                        "right_rms": float(np.sqrt(np.mean(right_ch**2))),
+                        "stereo_correlation": float(np.corrcoef(left_ch, right_ch)[0, 1]),
+                        "stereo_width": float(np.std(left_ch - right_ch))
+                    }
+                
+                # 高频信息保存（奈奎斯特频率以上的处理）
+                if sr > 16000:
+                    # 保存高分辨率采样的高频信息
+                    high_freq_cutoff = 8000  # 16kHz Nyquist频率
+                    stft_hf = librosa.stft(y, n_fft=4096)
+                    freqs_hf = librosa.fft_frequencies(sr=sr, n_fft=4096)
+                    high_freq_mask = freqs_hf > high_freq_cutoff
+                    
+                    metadata.original_nyquist_info = {
+                        "original_sr": sr,
+                        "high_freq_energy": float(np.mean(np.abs(stft_hf[high_freq_mask]))),
+                        "high_freq_spectrum": np.mean(np.abs(stft_hf[high_freq_mask]), axis=1) if np.any(high_freq_mask) else None
+                    }
                 
             except Exception as e:
                 logger.warning(f"频谱特征提取失败: {e}")

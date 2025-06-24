@@ -29,20 +29,17 @@ const AudioProcessor = ({ audioBuffer, audioFile, onTracksProcessed }) => {
         setProcessProgress(step.progress);
       }
       
-      // 模拟生成分离后的音频
+      // 为模拟目的，创建音频URL（实际项目中应该是分离后的实际音频）
+      const originalUrl = URL.createObjectURL(audioFile);
+      
+      // 模拟生成分离后的音频结果
       const processedResult = {
-        vocals: {
-          buffer: audioBuffer, // 实际项目中这里应该是分离后的人声音频
-          name: `${audioFile.name.replace(/\.[^/.]+$/, "")}_vocal.wav`
-        },
-        instrumental: {
-          buffer: audioBuffer, // 实际项目中这里应该是分离后的伴奏音频
-          name: `${audioFile.name.replace(/\.[^/.]+$/, "")}_instrumental.wav`
-        },
-        original: {
-          buffer: audioBuffer,
-          name: audioFile.name
-        }
+        vocals: originalUrl, // 模拟人声音频URL
+        instrumental: originalUrl, // 模拟伴奏音频URL
+        vocalsBuffer: audioBuffer, // 保留buffer用于下载
+        instrumentalBuffer: audioBuffer, // 保留buffer用于下载
+        vocalsName: `${audioFile.name.replace(/\.[^/.]+$/, "")}_vocal.wav`,
+        instrumentalName: `${audioFile.name.replace(/\.[^/.]+$/, "")}_instrumental.wav`
       };
       
       setProcessedAudio(processedResult);
@@ -197,7 +194,7 @@ const AudioProcessor = ({ audioBuffer, audioFile, onTracksProcessed }) => {
               </div>
               <button 
                 className="download-btn"
-                onClick={() => downloadAudio(processedAudio.vocals.buffer, processedAudio.vocals.name)}
+                onClick={() => downloadAudio(processedAudio.vocalsBuffer, processedAudio.vocalsName)}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
@@ -218,7 +215,7 @@ const AudioProcessor = ({ audioBuffer, audioFile, onTracksProcessed }) => {
               </div>
               <button 
                 className="download-btn"
-                onClick={() => downloadAudio(processedAudio.instrumental.buffer, processedAudio.instrumental.name)}
+                onClick={() => downloadAudio(processedAudio.instrumentalBuffer, processedAudio.instrumentalName)}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>

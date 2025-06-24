@@ -39,6 +39,7 @@ const TabPanel = ({ children, value, index, ...props }) => {
 
 const MusicEditor = () => {
   const [currentFile, setCurrentFile] = useState(null);
+  const [audioBuffer, setAudioBuffer] = useState(null);
   const [audioUrl, setAudioUrl] = useState('');
   const [separatedTracks, setSeparatedTracks] = useState(null);
   const [extractedLyrics, setExtractedLyrics] = useState([]);
@@ -53,6 +54,7 @@ const MusicEditor = () => {
 
   const handleFileUpload = (file, audioBuffer) => {
     setCurrentFile(file);
+    setAudioBuffer(audioBuffer);
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
     setError('');
@@ -115,6 +117,11 @@ const MusicEditor = () => {
   const handleError = (errorMessage) => {
     setError(errorMessage);
     setLoading(false);
+  };
+
+  const handleTracksProcessed = (tracks) => {
+    setSeparatedTracks(tracks);
+    console.log('音轨处理完成:', tracks);
   };
 
   return (
@@ -187,9 +194,9 @@ const MusicEditor = () => {
                       音轨分离处理
                     </Typography>
                     <AudioProcessor
+                      audioBuffer={audioBuffer}
                       audioFile={currentFile}
-                      onSeparationComplete={handleSeparationComplete}
-                      onError={handleError}
+                      onTracksProcessed={handleTracksProcessed}
                     />
                     
                     {separatedTracks && (

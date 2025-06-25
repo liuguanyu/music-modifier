@@ -1,13 +1,15 @@
 .audio-importer {
   border: 2px dashed #4facfe;
   border-radius: 16px;
-  padding: 3rem 2rem;
+  padding: 1.5rem 2rem;
   text-align: center;
   background: rgba(255, 255, 255, 0.03);
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 200px;
+  height: auto;
 }
 
 .audio-importer:hover {
@@ -34,9 +36,9 @@
 }
 
 .import-icon {
-  margin: 0 auto 1.5rem;
-  width: 64px;
-  height: 64px;
+  margin: 0 auto 1rem;
+  width: 48px;
+  height: 48px;
   color: #4facfe;
   opacity: 0.8;
   transition: all 0.3s ease;
@@ -49,8 +51,8 @@
 }
 
 .import-content h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
   color: #ffffff;
   font-weight: 600;
 }
@@ -71,13 +73,13 @@
 .select-file-btn {
   background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
   border: none;
-  padding: 0.875rem 2rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
   color: white;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   transition: all 0.3s ease;
   box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
 }
@@ -138,17 +140,12 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .audio-importer {
-    padding: 2rem 1rem;
-    margin: 0 0.5rem;
-  }
-  
-  .import-icon {
-    width: 48px;
-    height: 48px;
+    padding: 16px;
+    min-height: 150px;
   }
   
   .import-content h3 {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
   
   .import-content p {
@@ -156,8 +153,8 @@
   }
   
   .select-file-btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
   }
 }
 

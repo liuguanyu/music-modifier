@@ -19,86 +19,99 @@ const WaveformPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.5);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    // 避免重复初始化
     if (waveformRef.current && !wavesurfer.current) {
-      // 初始化WaveSurfer
-      wavesurfer.current = WaveSurfer.create({
-        container: waveformRef.current,
-        waveColor: '#4F81BD',
-        progressColor: '#1976d2',
-        cursorColor: '#ff5722',
-        barWidth: 2,
-        responsive: true,
-        height: height,
-        normalize: true,
-        backend: 'WebAudio',
-        mediaControls: false
-      });
+      try {
+        console.log('WaveformPlayer: 开始初始化 WaveSurfer');
+        // 初始化WaveSurfer（新版本API）
+        wavesurfer.current = WaveSurfer.create({
+          container: waveformRef.current,
+          waveColor: '#4F81BD',
+          progressColor: '#1976d2',
+          cursorColor: '#ff5722',
+          barWidth: 2,
+          responsive: true,
+          height: height,
+          normalize: true,
+          mediaControls: false
+        });
 
-      // 事件监听
-      wavesurfer.current.on('ready', () => {
-        if (wavesurfer.current) {
-          setDuration(wavesurfer.current.getDuration());
+        // 事件监听
+        wavesurfer.current.on('ready', () => {
+          console.log('WaveformPlayer: 音频已准备就绪');
+          if (wavesurfer.current) {
+            setDuration(wavesurfer.current.getDuration());
+            setIsLoading(false);
+            setError('');
+            onReady(wavesurfer.current);
+          }
+        });
+
+        wavesurfer.current.on('timeupdate', (currentTime) => {
+          setCurrentTime(currentTime);
+        });
+
+        wavesurfer.current.on('seeking', (currentTime) => {
+          setCurrentTime(currentTime);
+        });
+
+        wavesurfer.current.on('play', () => {
+          console.log('WaveformPlayer: 开始播放');
+          setIsPlaying(true);
+        });
+
+        wavesurfer.current.on('pause', () => {
+          console.log('WaveformPlayer: 暂停播放');
+          setIsPlaying(false);
+        });
+
+        wavesurfer.current.on('finish', () => {
+          console.log('WaveformPlayer: 播放完成');
+          setIsPlaying(false);
+        });
+
+        wavesurfer.current.on('loading', (percent) => {
+          console.log('WaveformPlayer: 加载进度', percent);
+          if (percent < 100) {
+            setIsLoading(true);
+          } else {
+            setIsLoading(false);
+          }
+        });
+
+        // 添加error事件处理
+        wavesurfer.current.on('error', (error) => {
+          console.error('WaveformPlayer: 播放错误', error);
+          setError(`播放错误: ${error.message || error}`);
           setIsLoading(false);
-          onReady(wavesurfer.current);
-        }
-      });
+        });
 
-      wavesurfer.current.on('audioprocess', () => {
-        if (wavesurfer.current) {
-          setCurrentTime(wavesurfer.current.getCurrentTime());
-        }
-      });
-
-      wavesurfer.current.on('seek', () => {
-        if (wavesurfer.current) {
-          setCurrentTime(wavesurfer.current.getCurrentTime());
-        }
-      });
-
-      wavesurfer.current.on('play', () => {
-        setIsPlaying(true);
-      });
-
-      wavesurfer.current.on('pause', () => {
-        setIsPlaying(false);
-      });
-
-      wavesurfer.current.on('finish', () => {
-        setIsPlaying(false);
-      });
-
-      wavesurfer.current.on('loading', (percent) => {
-        if (percent < 100) {
-          setIsLoading(true);
-        }
-      });
-
-      // 添加error事件处理
-      wavesurfer.current.on('error', (error) => {
-        console.warn('WaveSurfer error (safely ignored):', error);
-        setIsLoading(false);
-      });
+        console.log('WaveformPlayer: WaveSurfer 实例创建成功');
+      } catch (error) {
+        console.error('WaveformPlayer: 初始化失败', error);
+        setError(`初始化失败: ${error.message}`);
+      }
     }
 
     return () => {
       if (wavesurfer.current) {
         try {
-          // 先停止播放，然后销毁
-          if (wavesurfer.current.isPlaying()) {
+          console.log('WaveformPlayer: 开始清理 WaveSurfer 实例');
+          // 先停止播放
+          if (wavesurfer.current.isPlaying && wavesurfer.current.isPlaying()) {
             wavesurfer.current.pause();
           }
-          // 等待一小段时间确保停止完成
-          setTimeout(() => {
-            if (wavesurfer.current) {
-              wavesurfer.current.destroy();
-              wavesurfer.current = null;
-            }
-          }, 100);
+          // 移除所有事件监听器
+          wavesurfer.current.unAll();
+          // 销毁实例
+          wavesurfer.current.destroy();
+          wavesurfer.current = null;
+          console.log('WaveformPlayer: WaveSurfer 实例清理完成');
         } catch (error) {
-          // 忽略销毁时的错误
-          console.warn('WaveSurfer destroy error (safely ignored):', error);
+          console.warn('WaveformPlayer: 清理时出错，但会继续清理', error);
           wavesurfer.current = null;
         }
       }
@@ -106,18 +119,51 @@ const WaveformPlayer = ({
   }, [height, onReady]);
 
   useEffect(() => {
+    let isComponentMounted = true;
+    
     if (audioUrl && wavesurfer.current) {
+      console.log('WaveformPlayer: 开始加载音频:', audioUrl);
       setIsLoading(true);
-      // 使用Promise方式处理异步错误
-      const loadPromise = wavesurfer.current.load(audioUrl);
-      if (loadPromise && loadPromise.catch) {
-        loadPromise.catch((error) => {
-          console.warn('WaveSurfer load promise error (safely ignored):', error);
-          if (wavesurfer.current) {
-            setIsLoading(false);
-          }
-        });
+      setError('');
+      
+      try {
+        // 在加载新音频前，先停止当前播放
+        if (wavesurfer.current.isPlaying && wavesurfer.current.isPlaying()) {
+          wavesurfer.current.pause();
+        }
+        
+        // 使用Promise方式处理异步错误
+        const loadPromise = wavesurfer.current.load(audioUrl);
+        if (loadPromise && loadPromise.catch) {
+          loadPromise.catch((error) => {
+            // 只有在组件还挂载时才更新状态
+            if (isComponentMounted) {
+              // 忽略因组件卸载导致的AbortError
+              if (error.name === 'AbortError' && error.message.includes('signal is aborted')) {
+                console.log('WaveformPlayer: 音频加载被中止（组件卸载）');
+                return;
+              }
+              console.error('WaveformPlayer: 加载音频失败:', error);
+              setError(`音频加载失败: ${error.message || '未知错误'}`);
+              setIsLoading(false);
+            }
+          });
+        }
+      } catch (error) {
+        if (isComponentMounted) {
+          console.error('WaveformPlayer: 加载音频异常:', error);
+          setError(`音频加载异常: ${error.message}`);
+          setIsLoading(false);
+        }
       }
+      
+      return () => {
+        isComponentMounted = false;
+      };
+    } else if (!audioUrl && wavesurfer.current) {
+      console.log('WaveformPlayer: 清空音频URL');
+      setIsLoading(false);
+      setError('');
     }
   }, [audioUrl]);
 
@@ -168,6 +214,11 @@ const WaveformPlayer = ({
         {isLoading && (
           <Typography variant="body2" color="textSecondary">
             加载中...
+          </Typography>
+        )}
+        {error && (
+          <Typography variant="body2" color="error">
+            {error}
           </Typography>
         )}
       </Box>

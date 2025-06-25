@@ -85,64 +85,98 @@ const AudioPlayer = ({ audioBuffer, audioFile }) => {
     if (!audioBuffer) return;
 
     try {
-      // 创建新的AudioContext
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('AudioPlayer: 开始播放音频');
+      
+      // 先清理之前的资源
+      if (sourceRef.current) {
+        try {
+          sourceRef.current.stop();
+          sourceRef.current.disconnect();
+        } catch (e) {
+          // 忽略已经停止的源
+        }
+        sourceRef.current = null;
+      }
+
+      // 创建新的AudioContext（如果不存在）
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      // 如果context被暂停了，需要恢复
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
       
       // 创建音频源
-      sourceRef.current = audioContextRef.current.createBufferSource();
-      sourceRef.current.buffer = audioBuffer;
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
       
       // 创建音量控制节点
       const gainNode = audioContextRef.current.createGain();
       gainNode.gain.value = volume;
       
       // 连接音频节点
-      sourceRef.current.connect(gainNode);
+      source.connect(gainNode);
       gainNode.connect(audioContextRef.current.destination);
       
+      // 保存引用
+      sourceRef.current = source;
+      const startTime = currentTime;
+      const contextStartTime = audioContextRef.current.currentTime;
+      
       // 设置播放结束回调
-      sourceRef.current.onended = () => {
+      source.onended = () => {
+        console.log('AudioPlayer: 播放结束');
         setIsPlaying(false);
-        setCurrentTime(0);
+        setCurrentTime(duration);
+        sourceRef.current = null;
       };
       
       // 开始播放
-      const startTime = currentTime;
-      sourceRef.current.start(0, startTime);
+      source.start(0, startTime);
       setIsPlaying(true);
       
+      console.log('AudioPlayer: 播放开始，起始时间:', startTime);
+      
       // 更新播放进度
-      const startRealTime = Date.now();
+      let animationId;
       const updateProgress = () => {
-        if (isPlaying && sourceRef.current) {
-          const elapsed = (Date.now() - startRealTime) / 1000;
+        if (audioContextRef.current && sourceRef.current) {
+          const elapsed = audioContextRef.current.currentTime - contextStartTime;
           const newCurrentTime = startTime + elapsed;
           
           if (newCurrentTime >= duration) {
             setCurrentTime(duration);
             setIsPlaying(false);
+            console.log('AudioPlayer: 播放完成');
+            return;
           } else {
             setCurrentTime(newCurrentTime);
-            requestAnimationFrame(updateProgress);
+            animationId = requestAnimationFrame(updateProgress);
           }
         }
       };
-      requestAnimationFrame(updateProgress);
+      animationId = requestAnimationFrame(updateProgress);
+      
+      // 存储动画ID以便清理
+      source.animationId = animationId;
       
     } catch (error) {
-      console.error('播放音频失败:', error);
+      console.error('AudioPlayer: 播放音频失败:', error);
       setIsPlaying(false);
     }
   };
 
   const pauseAudio = () => {
+    console.log('AudioPlayer: 暂停播放');
     if (sourceRef.current) {
-      sourceRef.current.stop();
+      try {
+        sourceRef.current.stop();
+      } catch (error) {
+        // 忽略已经停止的源的错误
+      }
       sourceRef.current = null;
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
     }
     setIsPlaying(false);
   };

@@ -37,7 +37,7 @@ const AudioProcessor = ({ audioBuffer, audioFile, onTracksProcessed }) => {
       const tempFilePath = tempFileResult.path || tempFileResult;
       console.log('临时文件路径:', tempFilePath);
       
-      setCurrentStep('发送到Python后端进行分离...');
+      setCurrentStep('音频分解中...');
       setProcessProgress(20);
       
       // 调用新的IPC处理器进行音频分离

@@ -1,9 +1,11 @@
 .audio-processor {
   background: #1e1e2e;
   border-radius: 12px;
-  padding: 20px;
-  margin: 20px 0;
+  padding: 15px;
+  margin: 15px 0;
   border: 1px solid #333;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .processor-header {
@@ -73,7 +75,7 @@
 
 .processing-controls {
   text-align: center;
-  padding: 40px 20px;
+  padding: 20px 15px;
 }
 
 .process-btn {
@@ -111,7 +113,7 @@
 
 .processing-status {
   text-align: center;
-  padding: 30px 20px;
+  padding: 20px 15px;
 }
 
 .progress-container {
@@ -288,6 +290,7 @@
   .audio-processor {
     padding: 15px;
     margin: 15px 0;
+    max-height: 250px;
   }
   
   .processor-header {

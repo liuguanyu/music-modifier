@@ -147,10 +147,60 @@ const MusicEditor = () => {
     setLoading(false);
   };
 
-  const handleTracksProcessed = (tracks) => {
-    setSeparatedTracks(tracks);
-    setCurrentStep(1);
-    console.log('音轨处理完成:', tracks);
+  const handleTracksProcessed = async (tracks) => {
+    try {
+      console.log('原始分轨结果:', tracks);
+      
+      // 将本地文件路径转换为可播放的URL
+      const processedTracks = { ...tracks };
+      
+      if (tracks.vocals && window.electronAPI && window.electronAPI.readFile) {
+        try {
+          console.log('正在读取人声文件:', tracks.vocals);
+          const vocalsData = await window.electronAPI.readFile(tracks.vocals);
+          console.log('人声文件读取成功，大小:', vocalsData.byteLength);
+          const vocalsBlob = new Blob([vocalsData], { type: 'audio/wav' });
+          processedTracks.vocalsUrl = URL.createObjectURL(vocalsBlob);
+          processedTracks.vocals = tracks.vocals; // 保留原始路径用于下载
+          console.log('人声Blob URL创建成功:', processedTracks.vocalsUrl);
+        } catch (error) {
+          console.error('读取人声文件失败:', error);
+          // 尝试使用file://协议作为降级方案
+          processedTracks.vocalsUrl = `file://${tracks.vocals}`;
+          processedTracks.vocals = tracks.vocals;
+        }
+      }
+      
+      if (tracks.instrumental && window.electronAPI && window.electronAPI.readFile) {
+        try {
+          console.log('正在读取伴奏文件:', tracks.instrumental);
+          const instrumentalData = await window.electronAPI.readFile(tracks.instrumental);
+          console.log('伴奏文件读取成功，大小:', instrumentalData.byteLength);
+          const instrumentalBlob = new Blob([instrumentalData], { type: 'audio/wav' });
+          processedTracks.instrumentalUrl = URL.createObjectURL(instrumentalBlob);
+          processedTracks.instrumental = tracks.instrumental; // 保留原始路径用于下载
+          console.log('伴奏Blob URL创建成功:', processedTracks.instrumentalUrl);
+        } catch (error) {
+          console.error('读取伴奏文件失败:', error);
+          // 尝试使用file://协议作为降级方案
+          processedTracks.instrumentalUrl = `file://${tracks.instrumental}`;
+          processedTracks.instrumental = tracks.instrumental;
+        }
+      }
+      
+      setSeparatedTracks(processedTracks);
+      setCurrentStep(1);
+      console.log('音轨处理完成，最终结果:', processedTracks);
+    } catch (error) {
+      console.error('处理分轨结果失败:', error);
+      // 降级：直接使用原始路径
+      setSeparatedTracks({
+        ...tracks,
+        vocalsUrl: tracks.vocals ? `file://${tracks.vocals}` : null,
+        instrumentalUrl: tracks.instrumental ? `file://${tracks.instrumental}` : null
+      });
+      setCurrentStep(1);
+    }
   };
 
   const handleStepClick = (stepId) => {
@@ -224,14 +274,14 @@ const MusicEditor = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <WaveformPlayer
-                      audioUrl={separatedTracks.vocals}
+                      audioUrl={separatedTracks.vocalsUrl || separatedTracks.vocals}
                       title="人声音轨"
                       height={100}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <WaveformPlayer
-                      audioUrl={separatedTracks.instrumental}
+                      audioUrl={separatedTracks.instrumentalUrl || separatedTracks.instrumental}
                       title="伴奏音轨"
                       height={100}
                     />

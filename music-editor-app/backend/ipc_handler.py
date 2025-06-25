@@ -7,6 +7,8 @@ import sys
 import json
 import logging
 import traceback
+import base64
+import tempfile
 from pathlib import Path
 
 # 添加当前目录到路径
@@ -15,13 +17,17 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from services.audio_processor import AudioProcessor
 from services.audio_separator import AudioSeparator  
 from services.speech_recognizer import SpeechRecognizer
+from services.voice_composer import VoiceComposer
 
-# 配置日志
+# 配置日志 - 使用正确的相对路径
+log_dir = Path('../logs')
+log_dir.mkdir(exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/backend.log'),
+        logging.FileHandler(log_dir / 'backend.log'),
         logging.StreamHandler()
     ]
 )
@@ -36,6 +42,7 @@ class IPCHandler:
             self.audio_processor = AudioProcessor()
             self.audio_separator = AudioSeparator()
             self.speech_recognizer = SpeechRecognizer()
+            self.voice_composer = VoiceComposer()
             logger.info("所有服务初始化完成")
         except Exception as e:
             logger.error(f"服务初始化失败: {e}")
@@ -61,14 +68,62 @@ class IPCHandler:
                 "error": str(e)
             }
     
+    async def handle_separate_audio(self, params):
+        """处理前端传来的音频分离请求"""
+        try:
+            # 获取参数
+            audio_data = params.get('audio_data')  # base64编码的音频数据
+            filename = params.get('filename', 'audio.wav')
+            separation_mode = params.get('separation_mode', 'vocal-instrumental')
+            
+            logger.info(f"收到音频分离请求: {filename}, 模式: {separation_mode}")
+            
+            # 解码base64音频数据
+            audio_bytes = base64.b64decode(audio_data)
+            
+            # 创建临时文件保存音频
+            uploads_dir = Path('uploads')
+            uploads_dir.mkdir(exist_ok=True)
+            
+            temp_input_path = uploads_dir / f"temp_input_{filename}"
+            with open(temp_input_path, 'wb') as f:
+                f.write(audio_bytes)
+            
+            logger.info(f"音频文件保存到: {temp_input_path}")
+            
+            # 调用音频分离服务
+            result = await self.audio_separator.separate(str(temp_input_path))
+            
+            if result.get('success'):
+                logger.info("音频分离成功完成")
+                return {
+                    "success": True,
+                    "vocals_path": result.get('vocals_path'),
+                    "instrumental_path": result.get('instrumental_path'),
+                    "vocals_name": result.get('vocals_name'),
+                    "instrumental_name": result.get('instrumental_name')
+                }
+            else:
+                logger.error(f"音频分离失败: {result.get('error')}")
+                return {
+                    "success": False,
+                    "error": result.get('error', '音频分离失败')
+                }
+                
+        except Exception as e:
+            logger.error(f"处理音频分离请求失败: {e}")
+            logger.error(traceback.format_exc())
+            return {
+                "success": False,
+                "error": f"处理失败: {str(e)}"
+            }
+    
     async def handle_audio_separate(self, params):
         """音轨分离"""
         input_path = params.get('input_path')
-        output_dir = params.get('output_dir', '/tmp')
-        model = params.get('model', 'spleeter:2stems-16kHz')
         
         logger.info(f"开始音轨分离: {input_path}")
-        result = await self.audio_separator.separate(input_path, output_dir, model)
+        result = await self.audio_separator.separate(input_path)
         logger.info(f"音轨分离完成: {result}")
         return result
     
@@ -76,12 +131,24 @@ class IPCHandler:
         """语音识别"""
         input_path = params.get('input_path')
         language = params.get('language', 'zh')
-        model_size = params.get('model_size', 'base')
+        with_timestamps = params.get('with_timestamps', True)
         
         logger.info(f"开始语音识别: {input_path}")
-        result = await self.speech_recognizer.transcribe_with_timestamps(
-            input_path, language, model_size
-        )
+        
+        if with_timestamps:
+            # 创建会话并进行带时间戳的识别
+            session_id = self.speech_recognizer.create_session(input_path)
+            try:
+                result = await self.speech_recognizer.transcribe_with_timestamps_session(
+                    session_id, language
+                )
+            finally:
+                # 清理会话
+                self.speech_recognizer.cleanup_session(session_id)
+        else:
+            # 简单识别
+            result = await self.speech_recognizer.transcribe(input_path, language)
+        
         logger.info(f"语音识别完成")
         return result
     
@@ -108,6 +175,38 @@ class IPCHandler:
         logger.info(f"音频转换完成")
         return result
     
+    async def handle_voice_compose(self, params):
+        """音色合成"""
+        text = params.get('text')
+        voice_id = params.get('voice_id', 'default')
+        speed = params.get('speed', 1.0)
+        pitch = params.get('pitch', 0)
+        output_format = params.get('output_format', 'wav')
+        
+        logger.info(f"开始音色合成: {text[:50]}...")
+        result = await self.voice_composer.synthesize_speech(
+            text, voice_id, speed, pitch, output_format
+        )
+        logger.info(f"音色合成完成")
+        return result
+    
+    async def handle_voice_clone(self, params):
+        """声音克隆"""
+        reference_audio = params.get('reference_audio')
+        target_text = params.get('target_text')
+        clone_quality = params.get('clone_quality', 'medium')
+        
+        logger.info(f"开始声音克隆: {reference_audio}")
+        result = await self.voice_composer.clone_voice(
+            reference_audio, target_text, clone_quality
+        )
+        logger.info(f"声音克隆完成")
+        return result
+    
+    async def handle_voice_list_models(self, params):
+        """获取可用音色列表"""
+        return await self.voice_composer.list_available_voices()
+    
     async def handle_check_environment(self, params):
         """检查环境状态"""
         return {
@@ -124,7 +223,8 @@ class IPCHandler:
         services = {
             "audio_processor": self.audio_processor.is_ready(),
             "audio_separator": self.audio_separator.is_ready(),
-            "speech_recognizer": self.speech_recognizer.is_ready()
+            "speech_recognizer": self.speech_recognizer.is_ready(),
+            "voice_composer": self.voice_composer.is_ready()
         }
         
         return {

@@ -1,16 +1,28 @@
 import React, { useState, useRef } from 'react';
 import { 
-  Container, 
   Typography, 
   Box, 
   Grid, 
-  Card, 
-  CardContent,
-  Tabs,
-  Tab,
   Alert,
-  CircularProgress
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Button,
+  Divider,
+  Card,
+  CardContent
 } from '@mui/material';
+import {
+  CloudUpload,
+  GraphicEq,
+  Subtitles,
+  LibraryMusic,
+  CheckCircle,
+  RadioButtonUnchecked
+} from '@mui/icons-material';
 import AudioImporter from './AudioImporter';
 import AudioProcessor from './AudioProcessor';
 import WaveformPlayer from './WaveformPlayer';
@@ -18,24 +30,6 @@ import LyricsExtractor from './LyricsExtractor';
 import LyricsEditor from './LyricsEditor';
 import AudioComposer from './AudioComposer';
 import './MusicEditor.css';
-
-const TabPanel = ({ children, value, index, ...props }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`music-editor-tabpanel-${index}`}
-      aria-labelledby={`music-editor-tab-${index}`}
-      {...props}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-};
 
 const MusicEditor = () => {
   const [currentFile, setCurrentFile] = useState(null);
@@ -46,11 +40,46 @@ const MusicEditor = () => {
   const [editedLyrics, setEditedLyrics] = useState([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   const waveformRef = useRef(null);
+
+  // 定义流程步骤
+  const steps = [
+    {
+      id: 0,
+      label: '上传音频',
+      icon: CloudUpload,
+      description: '选择并上传音频文件',
+      completed: !!currentFile
+    },
+    {
+      id: 1,
+      label: '分轨处理',
+      icon: GraphicEq,
+      description: '人声与伴奏分离',
+      completed: !!separatedTracks,
+      disabled: !currentFile
+    },
+    {
+      id: 2,
+      label: '歌词提取',
+      icon: Subtitles,
+      description: '智能识别歌词时间轴',
+      completed: extractedLyrics.length > 0,
+      disabled: !separatedTracks
+    },
+    {
+      id: 3,
+      label: '音频合成',
+      icon: LibraryMusic,
+      description: '混合处理与导出',
+      completed: false,
+      disabled: extractedLyrics.length === 0
+    }
+  ];
 
   const handleFileUpload = (file, audioBuffer) => {
     setCurrentFile(file);
@@ -58,6 +87,7 @@ const MusicEditor = () => {
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
     setError('');
+    setCurrentStep(0);
     console.log('文件已上传:', {
       name: file.name,
       size: file.size,
@@ -68,12 +98,14 @@ const MusicEditor = () => {
 
   const handleSeparationComplete = (tracks) => {
     setSeparatedTracks(tracks);
+    setCurrentStep(1);
     console.log('音轨分离完成:', tracks);
   };
 
   const handleLyricsExtracted = (lyrics) => {
     setExtractedLyrics(lyrics);
     setEditedLyrics(lyrics);
+    setCurrentStep(2);
     console.log('歌词提取完成:', lyrics);
   };
 
@@ -110,10 +142,6 @@ const MusicEditor = () => {
     }
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
   const handleError = (errorMessage) => {
     setError(errorMessage);
     setLoading(false);
@@ -121,189 +149,302 @@ const MusicEditor = () => {
 
   const handleTracksProcessed = (tracks) => {
     setSeparatedTracks(tracks);
+    setCurrentStep(1);
     console.log('音轨处理完成:', tracks);
+  };
+
+  const handleStepClick = (stepId) => {
+    const step = steps[stepId];
+    if (!step.disabled) {
+      setCurrentStep(stepId);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              音频文件上传
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+              请选择需要处理的音频文件，支持MP3、WAV、FLAC等格式
+            </Typography>
+            
+            <AudioImporter onAudioLoad={handleFileUpload} />
+            
+            {currentFile && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  音频波形与播放控制
+                </Typography>
+                <WaveformPlayer
+                  audioUrl={audioUrl}
+                  title={currentFile.name}
+                  onReady={handleWaveformReady}
+                  height={150}
+                />
+                
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => handleStepClick(1)}
+                    disabled={!currentFile}
+                  >
+                    下一步：分轨处理
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        );
+        
+      case 1:
+        return (
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              音轨分离处理
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+              将音频分离为人声轨道和伴奏轨道，可选择不同的分离模式和质量等级
+            </Typography>
+            
+            <AudioProcessor
+              audioBuffer={audioBuffer}
+              audioFile={currentFile}
+              onTracksProcessed={handleTracksProcessed}
+            />
+            
+            {separatedTracks && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  分离结果:
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <WaveformPlayer
+                      audioUrl={separatedTracks.vocals}
+                      title="人声音轨"
+                      height={100}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <WaveformPlayer
+                      audioUrl={separatedTracks.instrumental}
+                      title="伴奏音轨"
+                      height={100}
+                    />
+                  </Grid>
+                </Grid>
+                
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => handleStepClick(2)}
+                    disabled={!separatedTracks}
+                  >
+                    下一步：歌词提取
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        );
+        
+      case 2:
+        return (
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              智能歌词提取
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+              使用语音识别技术自动提取人声轨道中的歌词，并生成时间轴
+            </Typography>
+            
+            <LyricsExtractor
+              audioFile={currentFile}
+              vocalsUrl={separatedTracks?.vocals}
+              onLyricsExtracted={handleLyricsExtracted}
+              onError={handleError}
+            />
+            
+            {extractedLyrics.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  提取结果 ({extractedLyrics.length} 行歌词)
+                </Typography>
+                <LyricsEditor
+                  lyrics={editedLyrics}
+                  onLyricsUpdate={handleLyricsUpdate}
+                  onSeekToTime={handleSeekToTime}
+                  currentTime={currentTime}
+                  isPlaying={isPlaying}
+                />
+                
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => handleStepClick(3)}
+                    disabled={extractedLyrics.length === 0}
+                  >
+                    下一步：音频合成
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        );
+        
+      case 3:
+        return (
+          <Box>
+            <Typography variant="h5" gutterBottom>
+              音频混合与导出
+            </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+              设置混音参数，将处理后的音频和歌词合成为最终作品
+            </Typography>
+            
+            <AudioComposer
+              originalFile={currentFile}
+              separatedTracks={separatedTracks}
+              lyrics={editedLyrics}
+              onError={handleError}
+            />
+          </Box>
+        );
+        
+      default:
+        return null;
+    }
   };
 
   return (
     <div className="music-editor-container">
-      <Container maxWidth="xl">
-        <Box className="editor-header">
-          <Typography variant="h3" component="h1" className="editor-title">
-            智能音乐编辑器
-          </Typography>
-          <Typography variant="subtitle1" color="textSecondary">
-            音频导入、分离、歌词提取与编辑的全流程工具
-          </Typography>
-        </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        {loading && (
-          <Box display="flex" justifyContent="center" alignItems="center" sx={{ mb: 3 }}>
-            <CircularProgress />
-            <Typography variant="body1" sx={{ ml: 2 }}>处理中...</Typography>
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        {/* 左侧导航栏 */}
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            width: 320, 
+            background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {/* LOGO区域 */}
+          <Box sx={{ p: 3, textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 600, mb: 1 }}>
+              智能音乐编辑器
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              AI音频处理工具
+            </Typography>
           </Box>
-        )}
 
-        <Grid container spacing={3}>
-          {/* 文件导入区 */}
-          <Grid item xs={12}>
-            <Card elevation={2}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  1. 音频文件导入
-                </Typography>
-                <AudioImporter onAudioLoad={handleFileUpload} />
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* 主要功能区 */}
-          {currentFile && (
-            <Grid item xs={12}>
-              <Card elevation={2}>
-                <CardContent>
-                  <Tabs value={activeTab} onChange={handleTabChange} aria-label="音乐编辑功能">
-                    <Tab label="波形播放" />
-                    <Tab label="音轨分离" />
-                    <Tab label="歌词提取" />
-                    <Tab label="歌词编辑" />
-                    <Tab label="音频合成" />
-                  </Tabs>
-
-                  {/* 波形播放面板 */}
-                  <TabPanel value={activeTab} index={0}>
-                    <Typography variant="h6" gutterBottom>
-                      音频波形与播放控制
-                    </Typography>
-                    <WaveformPlayer
-                      audioUrl={audioUrl}
-                      title={currentFile.name}
-                      onReady={handleWaveformReady}
-                      height={150}
+          {/* 流程步骤 */}
+          <Box sx={{ flex: 1, p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2, opacity: 0.9 }}>
+              处理流程
+            </Typography>
+            
+            <List>
+              {steps.map((step) => {
+                const IconComponent = step.icon;
+                const isActive = currentStep === step.id;
+                const isCompleted = step.completed;
+                const isDisabled = step.disabled;
+                
+                return (
+                  <ListItem
+                    key={step.id}
+                    button
+                    onClick={() => handleStepClick(step.id)}
+                    disabled={isDisabled}
+                    sx={{
+                      mb: 1,
+                      borderRadius: 2,
+                      background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
+                      '&:hover': {
+                        background: isDisabled ? 'transparent' : 'rgba(255,255,255,0.1)'
+                      },
+                      opacity: isDisabled ? 0.5 : 1
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      {isCompleted ? (
+                        <CheckCircle sx={{ color: '#4caf50' }} />
+                      ) : (
+                        <IconComponent sx={{ color: isActive ? 'white' : 'rgba(255,255,255,0.7)' }} />
+                      )}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={step.label}
+                      secondary={step.description}
+                      primaryTypographyProps={{
+                        sx: { 
+                          color: isActive ? 'white' : 'rgba(255,255,255,0.9)',
+                          fontWeight: isActive ? 600 : 400
+                        }
+                      }}
+                      secondaryTypographyProps={{
+                        sx: { color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }
+                      }}
                     />
-                  </TabPanel>
-
-                  {/* 音轨分离面板 */}
-                  <TabPanel value={activeTab} index={1}>
-                    <Typography variant="h6" gutterBottom>
-                      音轨分离处理
-                    </Typography>
-                    <AudioProcessor
-                      audioBuffer={audioBuffer}
-                      audioFile={currentFile}
-                      onTracksProcessed={handleTracksProcessed}
-                    />
-                    
-                    {separatedTracks && (
-                      <Box className="separated-tracks">
-                        <Typography variant="subtitle1" sx={{ mt: 3, mb: 2 }}>
-                          分离结果:
-                        </Typography>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} md={6}>
-                            <WaveformPlayer
-                              audioUrl={separatedTracks.vocals}
-                              title="人声音轨"
-                              height={100}
-                            />
-                          </Grid>
-                          <Grid item xs={12} md={6}>
-                            <WaveformPlayer
-                              audioUrl={separatedTracks.instrumental}
-                              title="伴奏音轨"
-                              height={100}
-                            />
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    )}
-                  </TabPanel>
-
-                  {/* 歌词提取面板 */}
-                  <TabPanel value={activeTab} index={2}>
-                    <Typography variant="h6" gutterBottom>
-                      智能歌词提取
-                    </Typography>
-                    <LyricsExtractor
-                      audioFile={currentFile}
-                      vocalsUrl={separatedTracks?.vocals}
-                      onLyricsExtracted={handleLyricsExtracted}
-                      onError={handleError}
-                    />
-                  </TabPanel>
-
-                  {/* 歌词编辑面板 */}
-                  <TabPanel value={activeTab} index={3}>
-                    <Typography variant="h6" gutterBottom>
-                      歌词时间轴编辑
-                    </Typography>
-                    <LyricsEditor
-                      lyrics={editedLyrics}
-                      onLyricsUpdate={handleLyricsUpdate}
-                      onSeekToTime={handleSeekToTime}
-                      currentTime={currentTime}
-                      isPlaying={isPlaying}
-                    />
-                  </TabPanel>
-
-                  {/* 音频合成面板 */}
-                  <TabPanel value={activeTab} index={4}>
-                    <Typography variant="h6" gutterBottom>
-                      音频混合与导出
-                    </Typography>
-                    <AudioComposer
-                      originalFile={currentFile}
-                      separatedTracks={separatedTracks}
-                      lyrics={editedLyrics}
-                      onError={handleError}
-                    />
-                  </TabPanel>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
+                  </ListItem>
+                );
+              })}
+            </List>
+          </Box>
 
           {/* 状态信息 */}
           {currentFile && (
-            <Grid item xs={12}>
-              <Card elevation={1}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    当前项目状态
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="textSecondary">
-                        音频文件: {currentFile.name}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="textSecondary">
-                        音轨分离: {separatedTracks ? '已完成' : '未处理'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="textSecondary">
-                        歌词提取: {extractedLyrics.length > 0 ? `${extractedLyrics.length}行` : '未提取'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <Typography variant="body2" color="textSecondary">
-                        歌词编辑: {editedLyrics.length > 0 ? `${editedLyrics.length}行` : '无编辑'}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
+            <Box sx={{ p: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
+                当前项目状态
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
+                文件: {currentFile.name}
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
+                分轨: {separatedTracks ? '已完成' : '未处理'}
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
+                歌词: {extractedLyrics.length > 0 ? `${extractedLyrics.length}行` : '未提取'}
+              </Typography>
+            </Box>
           )}
-        </Grid>
-      </Container>
+        </Paper>
+
+        {/* 右侧工作区 */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* 错误提示 */}
+          {error && (
+            <Alert severity="error" sx={{ m: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {/* 加载状态 */}
+          {loading && (
+            <Box display="flex" justifyContent="center" alignItems="center" sx={{ m: 2 }}>
+              <CircularProgress />
+              <Typography variant="body1" sx={{ ml: 2 }}>处理中...</Typography>
+            </Box>
+          )}
+
+          {/* 主要内容区域 */}
+          <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+            <Card elevation={1}>
+              <CardContent sx={{ p: 4 }}>
+                {renderStepContent()}
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+      </Box>
     </div>
   );
 };

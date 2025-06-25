@@ -443,20 +443,23 @@ class AudioSeparator:
             return waveform
     
     def _enhance_vocals(self, vocals: np.ndarray, accompaniment: np.ndarray) -> np.ndarray:
-        """增强人声，减少伴奏残留"""
+        """增强人声，减少伴奏残留（无白噪音优化版）"""
         try:
-            logger.info("开始增强人声...")
+            logger.info("开始无噪音人声增强...")
             
-            # 1. 使用谱减法减少伴奏残留
-            vocals_enhanced = self._spectral_subtraction(vocals, accompaniment, alpha=2.0)
+            # 1. 温和的谱减法，避免过度处理产生白噪音
+            vocals_enhanced = self._gentle_spectral_subtraction(vocals, accompaniment, alpha=0.8)
             
-            # 2. 人声频谱增强 (突出人声频率范围 85Hz - 255Hz 基频，谐波可达8kHz)
-            vocals_enhanced = self._enhance_vocal_frequencies(vocals_enhanced)
+            # 2. 自适应人声增强（仅在检测到人声时增强）
+            vocals_enhanced = self._adaptive_vocal_enhancement(vocals_enhanced)
             
-            # 3. 动态范围压缩
-            vocals_enhanced = self._compress_dynamic_range(vocals_enhanced, threshold=0.1, ratio=3.0)
+            # 3. 温和的动态范围优化，避免放大底噪
+            vocals_enhanced = self._gentle_dynamic_optimization(vocals_enhanced)
             
-            logger.info("人声增强完成")
+            # 4. 降噪滤波，去除可能的残留噪音
+            vocals_enhanced = self._smart_noise_reduction(vocals_enhanced)
+            
+            logger.info("无噪音人声增强完成")
             return vocals_enhanced
             
         except Exception as e:
@@ -464,28 +467,31 @@ class AudioSeparator:
             return vocals
     
     def _enhance_accompaniment(self, accompaniment: np.ndarray, vocals: np.ndarray) -> np.ndarray:
-        """增强伴奏，减少人声残留"""
+        """增强伴奏，减少人声残留（无白噪音优化版）"""
         try:
-            logger.info("开始增强伴奏...")
+            logger.info("开始无噪音伴奏增强...")
             
-            # 1. 使用谱减法减少人声残留
-            accompaniment_enhanced = self._spectral_subtraction(accompaniment, vocals, alpha=1.5)
+            # 1. 温和的谱减法减少人声残留
+            accompaniment_enhanced = self._gentle_spectral_subtraction(accompaniment, vocals, alpha=0.5)
             
-            # 2. 抑制人声频率范围
-            accompaniment_enhanced = self._suppress_vocal_frequencies(accompaniment_enhanced)
+            # 2. 智能人声抑制（保护乐器频率）
+            accompaniment_enhanced = self._intelligent_vocal_suppression(accompaniment_enhanced)
             
-            # 3. 立体声宽度增强
-            accompaniment_enhanced = self._enhance_stereo_width(accompaniment_enhanced)
+            # 3. 保守的立体声宽度增强
+            accompaniment_enhanced = self._conservative_stereo_enhancement(accompaniment_enhanced)
             
-            logger.info("伴奏增强完成")
+            # 4. 降噪处理
+            accompaniment_enhanced = self._smart_noise_reduction(accompaniment_enhanced)
+            
+            logger.info("无噪音伴奏增强完成")
             return accompaniment_enhanced
             
         except Exception as e:
             logger.warning(f"伴奏增强失败，返回原始伴奏: {e}")
             return accompaniment
     
-    def _spectral_subtraction(self, target: np.ndarray, noise: np.ndarray, alpha: float = 2.0) -> np.ndarray:
-        """谱减法去除噪声/残留"""
+    def _gentle_spectral_subtraction(self, target: np.ndarray, noise: np.ndarray, alpha: float = 0.8) -> np.ndarray:
+        """温和的谱减法去除噪声/残留（防止白噪音）"""
         try:
             # 转换为频域
             target_fft = fft.rfft(target, axis=0)
@@ -495,9 +501,16 @@ class AudioSeparator:
             target_power = np.abs(target_fft) ** 2
             noise_power = np.abs(noise_fft) ** 2
             
-            # 谱减法
-            enhanced_power = target_power - alpha * noise_power
-            enhanced_power = np.maximum(enhanced_power, 0.1 * target_power)  # 防止过度减法
+            # 自适应噪声估计
+            noise_power_smoothed = self._smooth_noise_spectrum(noise_power)
+            
+            # 温和的谱减法，更保守的alpha值
+            enhanced_power = target_power - alpha * noise_power_smoothed
+            # 更保守的底噪保护，避免过度减法
+            enhanced_power = np.maximum(enhanced_power, 0.3 * target_power)
+            
+            # 应用谱平滑，减少人工痕迹
+            enhanced_power = self._smooth_spectrum(enhanced_power)
             
             # 保持相位信息
             enhanced_magnitude = np.sqrt(enhanced_power)
@@ -509,8 +522,201 @@ class AudioSeparator:
             return enhanced.astype(target.dtype)
             
         except Exception as e:
-            logger.warning(f"谱减法处理失败: {e}")
+            logger.warning(f"温和谱减法处理失败: {e}")
             return target
+    
+    def _smooth_noise_spectrum(self, noise_power: np.ndarray) -> np.ndarray:
+        """平滑噪声频谱，避免突变"""
+        try:
+            # 使用移动平均平滑噪声估计
+            window_size = max(3, len(noise_power) // 100)
+            smoothed = np.convolve(noise_power.flatten(), 
+                                 np.ones(window_size)/window_size, mode='same')
+            return smoothed.reshape(noise_power.shape)
+        except:
+            return noise_power
+    
+    def _smooth_spectrum(self, power_spectrum: np.ndarray) -> np.ndarray:
+        """平滑功率谱，减少人工痕迹"""
+        try:
+            # 轻微的谱平滑
+            from scipy.ndimage import gaussian_filter1d
+            if power_spectrum.ndim == 1:
+                return gaussian_filter1d(power_spectrum, sigma=0.5)
+            else:
+                result = np.zeros_like(power_spectrum)
+                for ch in range(power_spectrum.shape[1]):
+                    result[:, ch] = gaussian_filter1d(power_spectrum[:, ch], sigma=0.5)
+                return result
+        except:
+            return power_spectrum
+    
+    def _adaptive_vocal_enhancement(self, vocals: np.ndarray) -> np.ndarray:
+        """自适应人声增强（仅在检测到人声时增强）"""
+        try:
+            # 检测人声活动段
+            vocal_activity = self._detect_vocal_activity(vocals)
+            
+            # 仅在有人声活动时进行增强
+            enhanced = np.copy(vocals)
+            if vocal_activity.any():
+                # 温和的人声频率增强
+                enhanced = self._gentle_vocal_frequency_boost(enhanced, vocal_activity)
+            
+            return enhanced
+        except Exception as e:
+            logger.warning(f"自适应人声增强失败: {e}")
+            return vocals
+    
+    def _detect_vocal_activity(self, audio: np.ndarray, sr: int = 44100) -> np.ndarray:
+        """检测人声活动段"""
+        try:
+            # 简单的能量阈值检测
+            frame_length = int(0.025 * sr)  # 25ms frames
+            hop_length = int(0.010 * sr)    # 10ms hop
+            
+            # 计算短时能量
+            energy = librosa.feature.rms(y=audio, frame_length=frame_length, hop_length=hop_length)[0]
+            
+            # 自适应阈值
+            threshold = np.percentile(energy, 30)  # 30%分位数作为阈值
+            
+            # 扩展到原始长度
+            times = librosa.frames_to_samples(np.arange(len(energy)), hop_length=hop_length)
+            vocal_activity = np.interp(np.arange(len(audio)), times, energy > threshold)
+            
+            return vocal_activity > 0.5
+            
+        except Exception as e:
+            logger.warning(f"人声活动检测失败: {e}")
+            return np.ones(len(audio), dtype=bool)  # 默认全部为人声
+    
+    def _gentle_vocal_frequency_boost(self, audio: np.ndarray, vocal_mask: np.ndarray) -> np.ndarray:
+        """温和的人声频率提升"""
+        try:
+            # 只在有人声的地方进行轻微增强
+            enhanced = np.copy(audio)
+            
+            # 人声基频轻微增强
+            enhanced[vocal_mask] *= 1.05  # 仅5%增益
+            
+            return enhanced
+            
+        except Exception as e:
+            logger.warning(f"温和人声频率提升失败: {e}")
+            return audio
+    
+    def _gentle_dynamic_optimization(self, audio: np.ndarray) -> np.ndarray:
+        """温和的动态范围优化，避免放大底噪"""
+        try:
+            # 保守的压缩参数
+            threshold = 0.3  # 更高的阈值
+            ratio = 1.5      # 更低的压缩比
+            
+            # 软膝压缩
+            audio_abs = np.abs(audio)
+            mask = audio_abs > threshold
+            
+            if mask.any():
+                compression_factor = 1 + (ratio - 1) * np.minimum(1.0, (audio_abs[mask] - threshold) / threshold)
+                audio[mask] = np.sign(audio[mask]) * (threshold + (audio_abs[mask] - threshold) / compression_factor)
+            
+            return audio
+            
+        except Exception as e:
+            logger.warning(f"温和动态优化失败: {e}")
+            return audio
+    
+    def _smart_noise_reduction(self, audio: np.ndarray, sr: int = 44100) -> np.ndarray:
+        """智能降噪滤波，去除残留噪音"""
+        try:
+            # 自适应降噪
+            # 1. 估计噪声级别
+            noise_level = np.percentile(np.abs(audio), 10)  # 10%分位数作为噪声估计
+            
+            # 2. 仅当检测到显著噪声时才处理
+            if noise_level > 0.001:  # 最小噪声阈值
+                # 温和的高通滤波，去除低频噪音
+                from scipy.signal import butter, filtfilt
+                b, a = butter(2, 40.0 / (sr/2), btype='high')  # 40Hz高通
+                audio = filtfilt(b, a, audio)
+                
+                # 轻微的噪声门限
+                gate_threshold = noise_level * 2
+                mask = np.abs(audio) < gate_threshold
+                audio[mask] *= 0.8  # 轻微衰减而不是完全静音
+            
+            return audio
+            
+        except Exception as e:
+            logger.warning(f"智能降噪失败: {e}")
+            return audio
+    
+    def _intelligent_vocal_suppression(self, audio: np.ndarray) -> np.ndarray:
+        """智能人声抑制（保护乐器频率）"""
+        try:
+            # 仅在人声频率范围进行温和抑制
+            # 保护乐器的重要频率范围
+            
+            # 温和抑制人声基频 (85-255 Hz)，但保护低音乐器
+            audio = self._selective_frequency_attenuation(audio, 100, 240, 0.9)
+            
+            # 轻微抑制人声共振峰，但保护乐器泛音
+            audio = self._selective_frequency_attenuation(audio, 500, 800, 0.95)
+            audio = self._selective_frequency_attenuation(audio, 1200, 1600, 0.95)
+            
+            return audio
+            
+        except Exception as e:
+            logger.warning(f"智能人声抑制失败: {e}")
+            return audio
+    
+    def _selective_frequency_attenuation(self, audio: np.ndarray, low_freq: float, high_freq: float, attenuation: float, sr: int = 44100) -> np.ndarray:
+        """选择性频率衰减"""
+        try:
+            # 设计温和的带通滤波器
+            nyquist = sr / 2
+            low = max(0.001, low_freq / nyquist)
+            high = min(0.999, high_freq / nyquist)
+            
+            if low >= high:
+                return audio
+            
+            from scipy.signal import butter, filtfilt
+            b, a = butter(2, [low, high], btype='band')
+            
+            # 提取目标频段
+            filtered = filtfilt(b, a, audio)
+            
+            # 温和衰减
+            return audio - (1 - attenuation) * filtered
+            
+        except Exception as e:
+            logger.warning(f"选择性频率衰减失败: {e}")
+            return audio
+    
+    def _conservative_stereo_enhancement(self, audio: np.ndarray) -> np.ndarray:
+        """保守的立体声宽度增强"""
+        try:
+            if audio.ndim != 2 or audio.shape[1] != 2:
+                return audio
+                
+            # 非常保守的立体声拓宽
+            mid = (audio[:, 0] + audio[:, 1]) / 2
+            side = (audio[:, 0] - audio[:, 1]) / 2
+            
+            # 轻微增强侧信号（1.1倍而不是1.2倍）
+            side_enhanced = side * 1.1
+            
+            # 重建左右声道
+            left = mid + side_enhanced
+            right = mid - side_enhanced
+            
+            return np.column_stack([left, right])
+            
+        except Exception as e:
+            logger.warning(f"保守立体声增强失败: {e}")
+            return audio
     
     def _enhance_vocal_frequencies(self, vocals: np.ndarray, sr: int = 44100) -> np.ndarray:
         """增强人声频率范围"""

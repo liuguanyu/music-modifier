@@ -2,6 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 // 安全地暴露API给渲染进程
 contextBridge.exposeInMainWorld('electronAPI', {
+  // 通用invoke接口
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+  
   // 文件对话框
   showOpenDialog: () => ipcRenderer.invoke('show-open-dialog'),
   showSaveDialog: () => ipcRenderer.invoke('show-save-dialog'),
@@ -20,6 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 文件操作
   saveTemporaryFile: (filename, arrayBuffer) => ipcRenderer.invoke('save-temporary-file', filename, arrayBuffer),
   getTempPath: (filename) => ipcRenderer.invoke('get-temp-path', filename),
+  copyFile: (sourcePath, destinationPath) => ipcRenderer.invoke('copy-file', sourcePath, destinationPath),
   
   // 文件系统相关 (仅在需要时添加)
   // readFile: (path) => ipcRenderer.invoke('read-file', path),

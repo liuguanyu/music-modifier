@@ -74,9 +74,10 @@ class IPCHandler:
             # 获取参数
             audio_data = params.get('audio_data')  # base64编码的音频数据
             filename = params.get('filename', 'audio.wav')
-            separation_mode = params.get('separation_mode', 'vocal-instrumental')
+            separation_mode = params.get('separation_mode', 'enhanced')  # 改为enhanced默认
+            quality = params.get('quality', 'high')  # 添加质量参数，默认高质量
             
-            logger.info(f"收到音频分离请求: {filename}, 模式: {separation_mode}")
+            logger.info(f"收到音频分离请求: {filename}, 模式: {separation_mode}, 质量: {quality}")
             
             # 解码base64音频数据
             audio_bytes = base64.b64decode(audio_data)
@@ -91,8 +92,12 @@ class IPCHandler:
             
             logger.info(f"音频文件保存到: {temp_input_path}")
             
-            # 调用音频分离服务
-            result = await self.audio_separator.separate(str(temp_input_path))
+            # 调用音频分离服务，传递完整参数
+            result = await self.audio_separator.separate(
+                audio_path=str(temp_input_path),
+                mode=separation_mode,
+                quality=quality
+            )
             
             if result.get('success'):
                 logger.info("音频分离成功完成")
@@ -120,10 +125,16 @@ class IPCHandler:
     
     async def handle_audio_separate(self, params):
         """音轨分离"""
-        input_path = params.get('input_path')
+        input_path = params.get('inputPath') or params.get('input_path')  # 兼容两种参数名
+        mode = params.get('mode', 'enhanced')
+        quality = params.get('quality', 'high')
         
-        logger.info(f"开始音轨分离: {input_path}")
-        result = await self.audio_separator.separate(input_path)
+        logger.info(f"开始音轨分离: {input_path}, 模式: {mode}, 质量: {quality}")
+        result = await self.audio_separator.separate(
+            audio_path=input_path,
+            mode=mode, 
+            quality=quality
+        )
         logger.info(f"音轨分离完成: {result}")
         return result
     
@@ -175,19 +186,67 @@ class IPCHandler:
         logger.info(f"音频转换完成")
         return result
     
-    async def handle_voice_compose(self, params):
-        """音色合成"""
+    async def handle_voice_synthesize(self, params):
+        """语音合成"""
         text = params.get('text')
         voice_id = params.get('voice_id', 'default')
-        speed = params.get('speed', 1.0)
-        pitch = params.get('pitch', 0)
-        output_format = params.get('output_format', 'wav')
+        pitch_shift = params.get('pitch_shift', 0.0)
+        tempo_ratio = params.get('tempo_ratio', 1.0)
+        output_path = params.get('output_path')
         
-        logger.info(f"开始音色合成: {text[:50]}...")
+        logger.info(f"开始语音合成: {text[:50]}...")
         result = await self.voice_composer.synthesize_speech(
-            text, voice_id, speed, pitch, output_format
+            text=text,
+            voice_id=voice_id,
+            pitch_shift=pitch_shift,
+            tempo_ratio=tempo_ratio,
+            output_path=output_path
         )
-        logger.info(f"音色合成完成")
+        logger.info(f"语音合成完成")
+        return result
+    
+    async def handle_voice_compose_with_preservation(self, params):
+        """带音色保持的音频合成"""
+        vocals_path = params.get('vocals_path')
+        instrumental_path = params.get('instrumental_path')
+        lyrics_audio_path = params.get('lyrics_audio_path')
+        output_path = params.get('output_path')
+        pitch_shift = params.get('pitch_shift', 0.0)
+        tempo_ratio = params.get('tempo_ratio', 1.0)
+        vocal_volume = params.get('vocal_volume', 0.8)
+        instrumental_volume = params.get('instrumental_volume', 0.6)
+        
+        logger.info(f"开始带音色保持的音频合成")
+        result = self.voice_composer.compose_with_voice_preservation(
+            vocals_path=vocals_path,
+            instrumental_path=instrumental_path,
+            lyrics_audio_path=lyrics_audio_path,
+            output_path=output_path,
+            pitch_shift=pitch_shift,
+            tempo_ratio=tempo_ratio,
+            vocal_volume=vocal_volume,
+            instrumental_volume=instrumental_volume
+        )
+        logger.info(f"带音色保持的音频合成完成")
+        return result
+    
+    async def handle_voice_simple_compose(self, params):
+        """简单音频合成"""
+        vocals_path = params.get('vocals_path')
+        instrumental_path = params.get('instrumental_path')
+        output_path = params.get('output_path')
+        vocal_volume = params.get('vocal_volume', 0.8)
+        instrumental_volume = params.get('instrumental_volume', 0.6)
+        
+        logger.info(f"开始简单音频合成")
+        result = self.voice_composer.simple_compose(
+            vocals_path=vocals_path,
+            instrumental_path=instrumental_path,
+            output_path=output_path,
+            vocal_volume=vocal_volume,
+            instrumental_volume=instrumental_volume
+        )
+        logger.info(f"简单音频合成完成")
         return result
     
     async def handle_voice_clone(self, params):

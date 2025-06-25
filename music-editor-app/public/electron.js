@@ -139,13 +139,14 @@ function sendCommandToPython(command, params) {
     // 存储pending请求
     pendingRequests.set(currentRequestId, { resolve, reject });
 
-    // 设置超时
+    // 设置超时 - 音频处理需要更多时间
+    const timeout = command === 'audio_separate' ? 600000 : 120000; // 音频分离10分钟，其他2分钟
     setTimeout(() => {
       if (pendingRequests.has(currentRequestId)) {
         pendingRequests.delete(currentRequestId);
         reject(new Error(`命令超时: ${command}`));
       }
-    }, 120000); // 2分钟超时
+    }, timeout);
 
     // 发送请求
     try {
@@ -213,14 +214,10 @@ ipcMain.handle('show-save-dialog', async () => {
 });
 
 // 音频处理功能
-ipcMain.handle('audio-separate', async (event, inputFile, outputDir, model) => {
+ipcMain.handle('audio-separate', async (event, params) => {
   try {
-    console.log('开始音轨分离:', { inputFile, outputDir, model });
-    return await sendCommandToPython('audio_separate', {
-      input_path: inputFile,
-      output_dir: outputDir,
-      model: model
-    });
+    console.log('开始音轨分离:', params);
+    return await sendCommandToPython('audio_separate', params);
   } catch (error) {
     console.error('音轨分离失败:', error);
     return { success: false, error: error.message };
@@ -310,6 +307,32 @@ ipcMain.handle('get-temp-path', async (event, filename) => {
   const tempDir = os.tmpdir();
   const timestamp = Date.now();
   return path.join(tempDir, `audio_${timestamp}_${filename}`);
+});
+
+// 文件复制功能
+ipcMain.handle('copy-file', async (event, sourcePath, destinationPath) => {
+  try {
+    console.log('复制文件:', { sourcePath, destinationPath });
+    
+    // 确保目标目录存在
+    const destDir = path.dirname(destinationPath);
+    await fs.mkdir(destDir, { recursive: true });
+    
+    // 复制文件
+    await fs.copyFile(sourcePath, destinationPath);
+    
+    return {
+      success: true,
+      message: '文件复制成功',
+      destination: destinationPath
+    };
+  } catch (error) {
+    console.error('文件复制失败:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 });
 
 // 错误处理
